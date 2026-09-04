@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),player=$('player'),area=$('gameArea'),toast=$('actionToast'),log=$('eventLog'),receivedEl=$('receivedCount'),executedEl=$('executedCount');
-let x=50,received=0,executed=0,jumpLock=false;
+let x=50,received=0,executed=0,jumpLock=false,jumpTimer=null;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function now(){const d=new Date();return d.toLocaleTimeString('pt-BR',{hour12:false})+'.'+String(d.getMilliseconds()).padStart(3,'0')}
 function addLog(action,source='local',meta={}){if(log?.querySelector('.empty'))log.innerHTML='';const row=document.createElement('div');row.className='event-row';const trace=meta.traceId||meta.commandId||meta.eventId||'-';row.innerHTML=`<b>${action}</b><span>${source}</span><small>${now()} · ${trace}</small>`;log?.prepend(row);while(log&&log.children.length>30)log.lastElementChild.remove()}
@@ -14,9 +14,9 @@ async function execute(action,meta={}){
     case 'walk_left': player?.classList.add('walking');setX(x-10);setTimeout(()=>player?.classList.remove('walking'),220);break;
     case 'walk_right': player?.classList.add('walking');setX(x+10);setTimeout(()=>player?.classList.remove('walking'),220);break;
     case 'jump':
-      if(jumpLock){ok=false;break}
-      jumpLock=true;player?.classList.remove('jumping');void player?.offsetWidth;player?.classList.add('jumping');setTimeout(()=>{player?.classList.remove('jumping');jumpLock=false},560);break;
-    case 'stop': player?.classList.remove('walking','jumping');jumpLock=false;break;
+      if(jumpTimer){clearTimeout(jumpTimer);jumpTimer=null}
+      jumpLock=true;player?.classList.remove('jumping');void player?.offsetWidth;player?.classList.add('jumping');jumpTimer=setTimeout(()=>{player?.classList.remove('jumping');jumpLock=false;jumpTimer=null},560);break;
+    case 'stop': if(jumpTimer){clearTimeout(jumpTimer);jumpTimer=null}player?.classList.remove('walking','jumping');jumpLock=false;break;
     default: ok=false;
   }
   addLog(action,source,meta);
