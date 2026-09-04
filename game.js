@@ -3,11 +3,12 @@ const $=id=>document.getElementById(id),player=$('player'),area=$('gameArea'),to
 let x=50,received=0,executed=0,jumpLock=false,jumpTimer=null;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function now(){const d=new Date();return d.toLocaleTimeString('pt-BR',{hour12:false})+'.'+String(d.getMilliseconds()).padStart(3,'0')}
-function addLog(action,source='local',meta={}){if(log?.querySelector('.empty'))log.innerHTML='';const row=document.createElement('div');row.className='event-row';const trace=meta.traceId||meta.commandId||meta.eventId||'-';row.innerHTML=`<b>${action}</b><span>${source}</span><small>${now()} · ${trace}</small>`;log?.prepend(row);while(log&&log.children.length>30)log.lastElementChild.remove()}
+function viewerOf(meta={}){const raw=String(meta?.event?.user||meta?.payload?.event?.user||meta?.user||'').trim().replace(/^@/,'');return raw&&raw!=='viewer'?`@${raw}`:''}
+function addLog(action,source='local',meta={}){if(log?.querySelector('.empty'))log.innerHTML='';const row=document.createElement('div');row.className='event-row';const trace=meta.traceId||meta.commandId||meta.eventId||'-',viewer=viewerOf(meta);const title=document.createElement('b'),sourceEl=document.createElement('span'),detail=document.createElement('small');title.textContent=viewer?`${viewer} → ${action}`:action;sourceEl.textContent=source;detail.textContent=`${now()} · ${trace}`;row.append(title,sourceEl,detail);log?.prepend(row);while(log&&log.children.length>30)log.lastElementChild.remove()}
 function setToast(text){if(toast)toast.textContent=text}
 function setX(next){x=clamp(next,8,92);if(player)player.style.left=x+'%'}
 async function execute(action,meta={}){
-  const source=meta.source||'local';
+  const source=meta.source||'local',viewer=viewerOf(meta);
   if(source==='live'){received++;if(receivedEl)receivedEl.textContent=String(received)}
   let ok=true;
   switch(String(action||'')){
@@ -20,8 +21,8 @@ async function execute(action,meta={}){
     default: ok=false;
   }
   addLog(action,source,meta);
-  if(ok){setToast(`${source==='live'?'Live+':'Local'}: ${action}`);if(source==='live'){executed++;if(executedEl)executedEl.textContent=String(executed)}}else setToast(`Comando não executado: ${action}`);
-  window.dispatchEvent(new CustomEvent('liveplus-test:execution',{detail:{action,ok,source,traceId:meta.traceId||meta.commandId||meta.eventId||'',at:Date.now()}}));
+  if(ok){setToast(`${viewer?viewer+' · ':''}${source==='live'?'Live+':'Local'}: ${action}`);if(source==='live'){executed++;if(executedEl)executedEl.textContent=String(executed)}}else setToast(`Comando não executado: ${action}`);
+  window.dispatchEvent(new CustomEvent('liveplus-test:execution',{detail:{action,ok,source,user:viewer,traceId:meta.traceId||meta.commandId||meta.eventId||'',at:Date.now()}}));
   return ok;
 }
 document.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>execute(btn.dataset.action,{source:'local'})));
