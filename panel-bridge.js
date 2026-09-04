@@ -27,7 +27,7 @@ async function connect(rawInput){
   try{session?.disconnect?.()}catch{}
   panelPresent=false;lastSeen=0;status('Conectando…','warn');
   session=new LivePlusGameSDK.Session({storageKey:C.panelStorageKey||'liveplus-test-session',manifest:manifest()});
-  session.addEventListener('connected',e=>{panelPresent=true;lastSeen=Date.now();status('Conectado','ok');updateTransport();sendState({scope:'initial'});setTimeout(()=>$('panelModal')?.classList.remove('show'),250)});
+  session.addEventListener('connected',()=>{panelPresent=true;lastSeen=Date.now();status('Conectado','ok');updateTransport();sendState({scope:'initial'})});
   session.addEventListener('command',e=>onCommand(e.detail||{}));
   session.addEventListener('message',e=>{const d=e.detail||{};panelPresent=true;lastSeen=Date.now();if(d.type!=='panel_heartbeat')sendState({scope:'message'})});
   session.addEventListener('transport',()=>{updateTransport();sendState({scope:'transport'})});
@@ -41,8 +41,8 @@ function bind(){
   const modal=$('panelModal'),input=$('panelCode');
   $('panelButton')?.addEventListener('click',()=>modal?.classList.add('show'));
   $('closePanel')?.addEventListener('click',()=>modal?.classList.remove('show'));
-  $('connectPanel')?.addEventListener('click',()=>connect());
-  if(input){window.LivePlusGameSDK?.installPasteBridge?.(input);try{const saved=clean(localStorage.getItem(C.panelCodeKey||'liveplus-test-panel-code'));if(saved)input.value=format(saved)}catch{}input.addEventListener('input',e=>e.target.value=format(e.target.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')connect()})}
+  $('connectPanel')?.addEventListener('click',async()=>{if(await connect())modal?.classList.remove('show')});
+  if(input){window.LivePlusGameSDK?.installPasteBridge?.(input);try{const saved=clean(localStorage.getItem(C.panelCodeKey||'liveplus-test-panel-code'));if(saved)input.value=format(saved)}catch{}input.addEventListener('input',e=>e.target.value=format(e.target.value));input.addEventListener('keydown',async e=>{if(e.key==='Enter'&&await connect())modal?.classList.remove('show')})}
 }
 bind();setInterval(()=>{updateTransport();if(panelPresent&&lastSeen&&Date.now()-lastSeen>30000&&session?.getTransport?.()==='offline'){panelPresent=false;status('Offline','')};sendState()},1000);
 window.addEventListener('pageshow',()=>window.LivePlusGameSDK?.installPasteBridge?.($('panelCode')));
