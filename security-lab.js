@@ -1,0 +1,9 @@
+(()=>{'use strict';
+const $=id=>document.getElementById(id);let lastCommand='Nenhum',lastCommandKind='neutral',lastEvent='Inicializando';
+function fmt(ms){if(!ms||ms<=0)return'--:--';const s=Math.max(0,Math.ceil(ms/1000));return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function set(id,text,kind='neutral'){const el=$(id);if(!el)return;el.textContent=text;el.dataset.kind=kind}
+function render(){const api=window.NOT_LICENSE_SESSION,state=window.NOT_LICENSE||{},token=api?.getToken?.(),next=api?.getNextValidationAt?.()||0,last=api?.getLastConfirmedAt?.()||0,exp=api?.getSessionExpiresAt?.()||0;const forged=state.authorized===true&&!token;set('labClient',state.authorized?'ALTERADO / AUTORIZADO':'BLOQUEADO',forged?'bad':state.authorized?'good':'neutral');set('labProof',token?'PRESENTE':'AUSENTE',token?'good':'bad');set('labTamper',forged?'SIM — sem prova':'NÃO',forged?'bad':'good');set('labCountdown',next?fmt(next-Date.now()):'--:--',next?'warn':'neutral');set('labSession',exp?fmt(exp-Date.now()):'--:--',token?'good':'bad');set('labHeartbeat',last?`${Math.floor((Date.now()-last)/1000)}s atrás`:'Nunca',last?'good':'bad');set('labCommand',lastCommand,lastCommandKind);set('labEvent',lastEvent,'neutral')}
+window.addEventListener('not-security-state',e=>{const d=e.detail||{};lastEvent=String(d.type||'evento');render()});
+window.addEventListener('not-command-security',e=>{const d=e.detail||{};lastCommand=d.allowed?`ACEITO — ${d.action||'comando'}`:`REJEITADO — ${d.reason||'sem autorização'}`;lastCommandKind=d.allowed?'good':'bad';render()});
+setInterval(render,250);render();
+})();
