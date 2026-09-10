@@ -8,6 +8,7 @@ Este arquivo registra o baseline de segurança descoberto durante os testes do M
 2. Proteger apenas botão/modal não é segurança: o modal pode ser aberto pelo DOM.
 3. Proteger apenas `connect()` não basta se o executor final do jogo estiver público.
 4. `window.LivePlusTestGame.execute("jump")` executava o jogo diretamente sem key, sessão Pa ou painel. Esta rota foi removida.
+5. DOM Command Injection: os controles locais liam `btn.dataset.action` no momento do clique. Pelo DevTools era possível trocar `data-action` e disparar `.click()`, alcançando o executor interno sem key/sessão/painel. Confirmado visualmente com `walk_left`, `walk_right`, `jump` e `stop`. Corrigido separando controles locais do executor remoto e capturando uma ação local fixa no bind, sem confiar em `dataset` mutável em runtime.
 
 ## Baseline obrigatório
 
@@ -21,11 +22,13 @@ Este arquivo registra o baseline de segurança descoberto durante os testes do M
 - Perda/expiração da sessão desconecta o bridge.
 - Revalidação periódica e estados INVALID_KEY, EXPIRED, SUSPENDED, REVOKED e ACTIVE devem ser respeitados.
 - Limite de dispositivos é por dispositivos ativos, não por quantidade de entradas.
+- Nunca usar atributo DOM mutável (`data-action`, value, class, id etc.) como autoridade para selecionar comando protegido no momento da execução.
+- Controles locais/demonstração devem ficar isolados do executor remoto. O bind local deve capturar uma ação fixa ou usar handlers explícitos.
 - Botões, modais, objetos congelados e closures são hardening do cliente, não raiz de confiança.
 
 ## Regra para novos jogos
 
-Nunca implementar `window.<Game>.execute`, `window.<Game>.runCommand`, `window.<Game>.triggerAction` ou equivalente que permita executar gameplay diretamente pelo Console. A execução local de botões pode chamar a função interna da própria closure; comandos remotos devem passar pelo bridge autorizado.
+Nunca implementar `window.<Game>.execute`, `window.<Game>.runCommand`, `window.<Game>.triggerAction` ou equivalente que permita executar gameplay diretamente pelo Console. Não encaminhar `btn.dataset.action` ou outro valor DOM mutável para o executor protegido. Controles locais podem chamar lógica local com ação fixa; comandos remotos devem passar pelo bridge autorizado.
 
 ## Arquitetura final recomendada
 
@@ -40,8 +43,8 @@ A verificação criptográfica decisiva deve acontecer no servidor/relay. Não c
 - Anti-replay com `commandId`/nonce e rejeição de comandos repetidos.
 - Kill switch / versão mínima do NOT.
 - Auditoria e detecção de anomalias.
-- Testar cada jogo com DevTools antes de liberar: estado falso, modal direto, connect direto, substituição de sessão e procura por executores públicos.
+- Testar cada jogo com DevTools antes de liberar: estado falso, modal direto, connect direto, substituição de sessão, procura por executores públicos e adulteração de atributos DOM seguida de `.click()`.
 
 ## Limite deste hardening
 
-O navegador continua sob controle do usuário. Remover o executor público fecha o bypass trivial encontrado no Modelo, mas não torna JavaScript estático inviolável. Um atacante determinado ainda pode modificar recursos carregados/local overrides/instrumentar o runtime. A barreira forte é o relay/backend rejeitar qualquer comando que não tenha autorização válida do Pa.
+O navegador continua sob controle do usuário. Remover o executor público e isolar os controles locais fecha os bypasses triviais encontrados no Modelo, mas não torna JavaScript estático inviolável. Um atacante determinado ainda pode modificar recursos carregados/local overrides/instrumentar o runtime. A barreira forte é o relay/backend rejeitar qualquer comando que não tenha autorização válida do Pa.
