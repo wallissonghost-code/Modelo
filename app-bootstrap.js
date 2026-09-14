@@ -21,7 +21,7 @@ async function startProtectedApp(){
   try{
     await loadScript('./security-lab.js?v=2');
     await loadScript('./config.js?v=1');
-    await loadScript('https://cdn.jsdelivr.net/gh/wallissonghost-code/projeto-daniel@229421e058f09626e95ef4eab1582569a5d6ec1a/sdk/liveplus-game-sdk-v1.js');
+    await loadScript('https://cdn.jsdelivr.net/gh/wallissonghost-code/projeto-daniel@main/sdk/liveplus-game-sdk-v1.js?v=b0086cc');
     await loadScript('./game.js?v=4');
     await loadScript('./panel-bridge.js?v=7');
   }catch(error){
