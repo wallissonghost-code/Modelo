@@ -1,4 +1,4 @@
-window.LIVEPLUS_GAME_RELAY_ENDPOINT='wss://projeto-daniel-hjgg.onrender.com';
+window.LIVEPLUS_GAME_RELAY_ENDPOINT='wss://projeto-daniel.wallissonghost.workers.dev/relay';
 
 window.LIVEPLUS_TEST_CONFIG={
   gameId:'liveplus-test-game',
