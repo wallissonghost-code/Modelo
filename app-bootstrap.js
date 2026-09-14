@@ -23,7 +23,7 @@ async function startProtectedApp(){
     await loadScript('./config.js?v=2');
     await loadScript('https://cdn.jsdelivr.net/gh/wallissonghost-code/projeto-daniel@main/sdk/liveplus-game-sdk-v1.js?v=2b34bee');
     await loadScript('./game.js?v=4');
-    await loadScript('./panel-bridge.js?v=9');
+    await loadScript('./panel-bridge.js?v=10');
   }catch(error){
     console.error('[Modelo] Falha ao iniciar conteúdo protegido.',error);
     mount.replaceChildren();
